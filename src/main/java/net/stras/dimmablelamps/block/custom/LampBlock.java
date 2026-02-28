@@ -10,7 +10,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
-import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.stras.dimmablelamps.item.ModItems;
@@ -19,47 +18,48 @@ import javax.annotation.Nullable;
 
 public class LampBlock extends Block {
 
-    public static final IntegerProperty POWER = BlockStateProperties.POWER;
-    public static final IntegerProperty LIT = IntegerProperty.create("lit",0,15);
+    public static final IntegerProperty LIT = IntegerProperty.create("lit", 0, 15);
 
     public LampBlock(Properties properties) {
         super(properties);
+        this.registerDefaultState(this.stateDefinition.any().setValue(LIT, 0));
     }
 
     @Override
-    public void neighborChanged(BlockState state, Level level, BlockPos pos, Block block, BlockPos pos1, boolean b) {
-        if(!level.isClientSide){
-            int flag = state.getValue(LIT);
-            if(level.hasNeighborSignal(pos)){
-                int i = level.getBestNeighborSignal(pos);
-                if(i<=15){
-                    level.setBlock(pos,state.setValue(LIT, i),3);
-                }
-            } else {
-                level.setBlock(pos,state.setValue(LIT, 0),3);
-            }
+    public void neighborChanged(BlockState state, Level level, BlockPos pos,
+                                Block block, BlockPos fromPos, boolean isMoving) {
+
+        if (!level.isClientSide) {
+            int power = level.getBestNeighborSignal(pos);
+            level.setBlock(pos, state.setValue(LIT, power), 3);
         }
     }
+
     @Nullable
+    @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
-        return this.defaultBlockState().setValue(LIT, context.getLevel().getBestNeighborSignal(context.getClickedPos()));
+        int power = context.getLevel().getBestNeighborSignal(context.getClickedPos());
+        return this.defaultBlockState().setValue(LIT, power);
     }
 
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos,
                                  Player player, InteractionHand hand, BlockHitResult result) {
-        ItemStack itemstack = player.getItemInHand(hand);
-        if(hand == InteractionHand.MAIN_HAND){
-            if (itemstack.is(ModItems.WRENCH.get())){
-            level.setBlock(pos, state.cycle(LIT),3);
-        }}
 
+        if (!level.isClientSide && hand == InteractionHand.MAIN_HAND) {
+            ItemStack stack = player.getItemInHand(hand);
 
-        return super.use(state, level, pos, player, hand, result);
+            if (stack.is(ModItems.WRENCH.get())) {
+                level.setBlock(pos, state.cycle(LIT), 3);
+                return InteractionResult.SUCCESS;
+            }
+        }
+
+        return InteractionResult.PASS;
     }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(LIT, POWER);
+        builder.add(LIT);
     }
 }
