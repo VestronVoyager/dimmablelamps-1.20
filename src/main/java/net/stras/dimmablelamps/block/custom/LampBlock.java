@@ -2,6 +2,7 @@ package net.stras.dimmablelamps.block.custom;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -62,7 +63,7 @@ public class LampBlock extends Block {
     }
 
     @Override
-    public void tick(BlockState state, ServerLevel level, BlockPos pos, net.minecraft.util.RandomSource random) {
+    public void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
         int power = level.getBestNeighborSignal(pos);
         int target = targetLit(state, power);
         if (target != state.getValue(LIT)) {
@@ -85,17 +86,17 @@ public class LampBlock extends Block {
         ItemStack stack = player.getItemInHand(hand);
         if (!stack.is(ModItems.WRENCH.get())) return InteractionResult.PASS;
 
+        BlockState newState;
         if (player.isShiftKeyDown()) {
-            BlockState newState = state.setValue(TOGGLE_MODE, false);
-            int power = level.getBestNeighborSignal(pos);
-            level.setBlock(pos, newState.setValue(LIT, power), 3);
+            newState = state.setValue(TOGGLE_MODE, !state.getValue(TOGGLE_MODE));
         } else {
-            int capturedBrightness = state.getValue(LIT) > 0 ? state.getValue(LIT) : 15;
-            BlockState newState = state.setValue(TOGGLE_MODE, true)
-                    .setValue(BRIGHTNESS, capturedBrightness);
-            int power = level.getBestNeighborSignal(pos);
-            level.setBlock(pos, newState.setValue(LIT, power > 0 ? capturedBrightness : 0), 3);
+            int newBrightness = (state.getValue(BRIGHTNESS) + 1) % 16;
+            newState = state.setValue(BRIGHTNESS, newBrightness);
         }
+
+        int power = level.getBestNeighborSignal(pos);
+        int target = targetLit(newState, power);
+        level.setBlock(pos, newState.setValue(LIT, target), 3);
         return InteractionResult.SUCCESS;
     }
 
