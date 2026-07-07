@@ -1,34 +1,39 @@
-package net.stras.dimmablelamps;
+package net.stras.dimmablelamps.block;
 
-import com.mojang.logging.LogUtils;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.stras.dimmablelamps.block.ModBlocks;
-import net.stras.dimmablelamps.item.ModCreativeModeTab;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraftforge.registries.DeferredRegister;
+import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegistryObject;
+import net.stras.dimmablelamps.DimmableLamps;
+import net.stras.dimmablelamps.block.custom.LampBlock;
 import net.stras.dimmablelamps.item.ModItems;
-import org.slf4j.Logger;
 
-@Mod(DimmableLamps.MOD_ID)
-public class DimmableLamps {
+import java.util.function.Supplier;
 
-    public static final String MOD_ID = "dimmablelamps";
-    private static final Logger LOGGER = LogUtils.getLogger();
+public class ModBlocks {
 
-    public DimmableLamps() {
+    public static final DeferredRegister<Block> BLOCKS =
+            DeferredRegister.create(ForgeRegistries.BLOCKS, DimmableLamps.MOD_ID);
 
-        IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
-        ModItems.ITEMS.register(modEventBus);
-        ModBlocks.BLOCKS.register(modEventBus);
-        ModCreativeModeTab.CREATIVE_MODE_TABS.register(modEventBus);
+    public static final RegistryObject<Block> LAMP_BLOCK = registerBlock(
+            "lamp_block",
+            () -> new LampBlock(BlockBehaviour.Properties.of()
+                    .strength(1f)
+                    .requiresCorrectToolForDrops()
+                    .lightLevel(state -> state.getValue(LampBlock.LIT)))
+    );
 
-        modEventBus.addListener(this::commonSetup);
-
-        MinecraftForge.EVENT_BUS.register(this);
+    private static <T extends Block> RegistryObject<T> registerBlock(String name, Supplier<T> block) {
+        RegistryObject<T> toReturn = BLOCKS.register(name, block);
+        registerBlockItem(name, toReturn);
+        return toReturn;
     }
 
-    private void commonSetup(final FMLCommonSetupEvent event) {
+    private static <T extends Block> RegistryObject<Item> registerBlockItem(String name, RegistryObject<T> block) {
+        return ModItems.ITEMS.register(name,
+                () -> new BlockItem(block.get(), new Item.Properties()));
     }
 }
