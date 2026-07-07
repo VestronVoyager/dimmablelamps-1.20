@@ -63,4 +63,3 @@ public class LampBlock extends Block {
         builder.add(LIT);
     }
 }
-//test
