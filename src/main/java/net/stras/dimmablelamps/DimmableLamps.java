@@ -1,39 +1,47 @@
-package net.stras.dimmablelamps.block;
+package net.stras.dimmablelamps;
 
-import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.state.BlockBehaviour;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
-import net.stras.dimmablelamps.DimmableLamps;
-import net.stras.dimmablelamps.block.custom.LampBlock;
+import com.mojang.logging.LogUtils;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
+import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.stras.dimmablelamps.item.ModItems;
+import net.stras.dimmablelamps.block.ModBlocks;
+import org.slf4j.Logger;
 
-import java.util.function.Supplier;
+// The value here should match an entry in the META-INF/mods.toml file
+@Mod(DimmableLamps.MOD_ID)
+public class DimmableLamps
+{
+    // Define mod id in a common place for everything to reference
+    public static final String MOD_ID = "dimmablelamps";
+    // Directly reference a slf4j logger
+    private static final Logger LOGGER = LogUtils.getLogger();
+    public DimmableLamps()
+    {
+        IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
 
-public class ModBlocks {
+        ModItems.register(modEventBus);
+        ModBlocks.register(modEventBus);
+        modEventBus.addListener(this::commonSetup);
 
-    public static final DeferredRegister<Block> BLOCKS =
-            DeferredRegister.create(ForgeRegistries.BLOCKS, DimmableLamps.MOD_ID);
-
-    public static final RegistryObject<Block> LAMP_BLOCK = registerBlock(
-            "lamp_block",
-            () -> new LampBlock(BlockBehaviour.Properties.of()
-                    .strength(1f)
-                    .requiresCorrectToolForDrops()
-                    .lightLevel(state -> state.getValue(LampBlock.LIT)))
-    );
-
-    private static <T extends Block> RegistryObject<T> registerBlock(String name, Supplier<T> block) {
-        RegistryObject<T> toReturn = BLOCKS.register(name, block);
-        registerBlockItem(name, toReturn);
-        return toReturn;
+        MinecraftForge.EVENT_BUS.register(this);
     }
 
-    private static <T extends Block> RegistryObject<Item> registerBlockItem(String name, RegistryObject<T> block) {
-        return ModItems.ITEMS.register(name,
-                () -> new BlockItem(block.get(), new Item.Properties()));
+    private void commonSetup(final FMLCommonSetupEvent event) {
+    }
+
+
+    // You can use EventBusSubscriber to automatically register all static methods in the class annotated with @SubscribeEvent
+    @Mod.EventBusSubscriber(modid = MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+    public static class ClientModEvents
+    {
+        @SubscribeEvent
+        public static void onClientSetup(FMLClientSetupEvent event) {
+        }
     }
 }
